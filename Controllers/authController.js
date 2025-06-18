@@ -1,6 +1,7 @@
 import { upsertstreamUSer } from "../DB/stream.js";
 import User from "../Models/user.js";
 import jwt from "jsonwebtoken";
+
 export async function signup(req, res) {
   const { email, password, fullName } = req.body;
 
@@ -97,4 +98,56 @@ export async function login(req, res) {
 export async function logout(req, res) {
   res.clearCookie("jwt");
   res.status(200).json({ sucess: true, messgae: "logout succesfully" });
+}
+
+export async function onboard(req, res) {
+  try {
+    const userId = req.user._id;
+    const { fullName, bios, nativeLanguage, learningLanguage, location } =
+      req.body;
+    if (
+      !fullName ||
+      !bios ||
+      !nativeLanguage ||
+      !learningLanguage ||
+      !location
+    ) {
+      return res.status(400).json({
+        message: "All fields are required",
+        missingFields: [
+          !fullName && "fullName",
+          !bios && "bios",
+          !nativeLanguage && "nativeLanguage",
+          !learningLanguage && "learningLanguage",
+          !location && "location",
+        ].filter(Boolean),
+      });
+    }
+    const updatedUSer = await User.findByIdAndUpdate(
+      userId,
+      {
+        ...req.body,
+        isonBoard: true,
+      },
+      { new: true }
+    );
+
+    if (!updatedUSer)
+      return res.status(404).json({ message: "User not found" });
+    try {
+      await upsertstreamUSer({
+        id: updatedUSer._id.toString(),
+        name: updatedUSer.fullName,
+        image: updatedUSer.profilephoto || "",
+      });
+      console.log(`stream user update ${updatedUSer.fullName}`);
+    } catch (streamError) {
+      console.log("Error update stream", streamError.message);
+    }
+
+    res.status(200).json({ success: true, user: updatedUSer });
+  } catch (error) {
+    console.error("Onboard error :", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 }

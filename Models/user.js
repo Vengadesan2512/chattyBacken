@@ -28,6 +28,18 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    nativeLanguage: {
+      type: String,
+      default: "",
+    },
+    learningLanguage: {
+      type: String,
+      default: "",
+    },
+    location: {
+      type: String,
+      default: "",
+    },
     friends: [
       {
         type: mongoose.Schema.Types.ObjectId,
